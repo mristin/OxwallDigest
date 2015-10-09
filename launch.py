@@ -103,9 +103,9 @@ def digest():
 
         if not post.topic.group.is_private and not post.topic.group.section.is_hidden:
             post_dict = {
-                "username": post.user.username.decode("UTF-8", errors="replace"),
+                "username": post.user.username,
                 "date": datetime.datetime.fromtimestamp(post.create_stamp).strftime("%Y-%m-%d %H:%M"),
-                "topic": post.topic.title.decode("UTF-8", errors="replace"),
+                "topic": post.topic.title,
                 "url": "http://oxwall.nena1.ch/forum/topic/%s" % (post.topic.id)
             }
 
@@ -117,10 +117,11 @@ def digest():
                  Blog_post.timestamp < seconds_since_epoch(interval_end)),
                     Blog_post.privacy == "everybody",
                     Blog_post.is_draft == False).order_by(Blog_post.timestamp):
+
         blog_posts.append({
-            "username": post.user.username.decode("UTF-8", errors="replace"),
+            "username": post.user.username,
             "date": datetime.datetime.fromtimestamp(post.timestamp).strftime("%Y-%m-%d %H:%M"),
-            "title": post.title.decode("UTF-8", errors="replace"),
+            "title": post.title,
             "url": "http://oxwall.nena1.ch/blogs/%s" % (post.id)
         })
 
@@ -130,7 +131,7 @@ def digest():
                  Event.create_timestamp < seconds_since_epoch(interval_end)),
                     Event.who_can_view == 1).order_by(Event.create_timestamp):
         events.append({
-            "username": event.user.username.decode("UTF-8", errors="replace"),
+            "username": event.user.username,
             "date": datetime.datetime.fromtimestamp(event.create_timestamp).strftime("%Y-%m-%d %H:%M"),
             "title": event.title,
             "url": "http://oxwall.nena1.ch/blogs/%s" % (event.id)
@@ -190,6 +191,7 @@ def main():
     try:
         digest()
     except Exception as e:
+        raise
         update_state(configuration.error_log_path, {"error": str(e), "date": str(datetime.datetime.now())})
 
 

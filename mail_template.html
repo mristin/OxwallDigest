@@ -1,12 +1,18 @@
 <html>
 <head>
     <meta charset="UTF-8"/>
+
+    <style>
+        li {
+        margin: 1em 0;
+        }
+    </style>
 </head>
 
 <h1>Forum posts</h1>
 <ul>
     {% for post in forum_posts %}
-    <li>Die BenutzerIn {{post.username}} schrieb am {{post.date}} im Forum zum Thema '{{post.topic}}' (<a
+    <li>{{post.date}}: {{post.username}} <em>zum Thema</em> '{{post.topic}}' (<a
             href="{{post.url}}">link</a>)
     </li>
     {% else %}
@@ -17,7 +23,7 @@
 <h1>Blog posts</h1>
 <ul>
     {% for post in blog_posts %}
-    <li>{{post.title}} <em>gepostet von</em> {{post.username}} <em>am</em> {{post.date}} (<a href="{{post.url}}">link</a>)</li>
+    <li>{{post.date}}: {{post.title}} <em>von</em> {{post.username}} (<a href="{{post.url}}">link</a>)</li>
     {% else %}
     <li><em>Keine neuen Blog-Posts.</em></li>
     {% endfor %}
@@ -27,9 +33,10 @@
 <h1>Veranstaltungen</h1>
 <ul>
     {% for event in events %}
-    <li>{{event.title}} <em>gepostet von</em> {{event.username}} <em>am</em> {{event.date}} (<a href="{{event.url}}">link</a>)</li>
+    <li>{{event.title}} <em>gepostet von</em> {{event.username}} <em>am</em> {{event.date}} (<a href="{{event.url}}">link</a>)
+    </li>
     {% else %}
-    <li><em>Keine neuen Blog-Posts.</em></li>
+    <li><em>Keine neuen Veranstaltungen.</em></li>
     {% endfor %}
 </ul>
 
