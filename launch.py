@@ -137,7 +137,7 @@ def digest():
             "url": "http://oxwall.nena1.ch/blogs/%s" % (event.id)
         })
 
-    message = template.render(forum_posts=forum_posts, blog_posts=blog_posts).encode("UTF-8")
+    message = template.render(forum_posts=forum_posts, blog_posts=blog_posts, events = events).encode("UTF-8")
 
     # Send digests
     if len(message) > configuration.max_message_size:
