@@ -2,6 +2,7 @@ __author__ = 'marko'
 
 import sqlalchemy
 from sqlalchemy import Column, Integer, String, ForeignKey, Text, Boolean
+from sqlalchemy.dialects.mysql import TINYINT
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -54,13 +55,26 @@ class Forum_post(Base):
     topic = relationship(Forum_topic)
     user = relationship(User)
 
-# CREATE TABLE `ow_forum_post` (
-#   `id` int(11) NOT NULL AUTO_INCREMENT,
-#   `topicId` int(11) NOT NULL,
-#   `userId` int(11) NOT NULL,
-#   `text` text NOT NULL,
-#   `createStamp` int(11) NOT NULL,
-#   PRIMARY KEY (`id`),
-#   KEY `topicId` (`topicId`),
-#   FULLTEXT KEY `post_text` (`text`)
-# ) ENGINE=MyISAM AUTO_INCREMENT=35 DEFAULT CHARSET=utf8;
+
+class Blog_post(Base):
+    __tablename__ = "ow_blogs_post"
+    id = Column('id', Integer, primary_key=True)
+    user_id = Column('authorId', Integer, ForeignKey('ow_base_user.id'), nullable=False)
+    title = Column('title', String(512), nullable=False)
+    post = Column('post', Text, nullable=False)
+    timestamp = Column('timestamp', Integer, nullable=False)
+    is_draft = Column('isDraft', Boolean, nullable=False)
+    privacy = Column('privacy', String(50), nullable=False, default="everybody")
+
+    user = relationship(User)
+
+
+class Event(Base):
+    __tablename__ = "ow_event_item"
+    id = Column('id', Integer, primary_key=True)
+    title = Column('title', Text, nullable=False)
+    create_timestamp = Column('createTimeStamp', Integer, nullable=False)
+    user_id = Column('userId', Integer, ForeignKey('ow_base_user.id'), nullable=False)
+    who_can_view = Column("whoCanView", TINYINT(4), nullable=False)
+
+    user = relationship(User)

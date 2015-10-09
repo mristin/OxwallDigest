@@ -1,0 +1,37 @@
+<html>
+<head>
+    <meta charset="UTF-8"/>
+</head>
+
+<h1>Forum posts</h1>
+<ul>
+    {% for post in forum_posts %}
+    <li>Die BenutzerIn {{post.username}} schrieb am {{post.date}} im Forum zum Thema '{{post.topic}}' (<a
+            href="{{post.url}}">link</a>)
+    </li>
+    {% else %}
+    <li><em>Keine neuen Forum-Posts.</em></li>
+    {% endfor %}
+</ul>
+
+<h1>Blog posts</h1>
+<ul>
+    {% for post in blog_posts %}
+    <li>{{post.title}} <em>gepostet von</em> {{post.username}} <em>am</em> {{post.date}} (<a href="{{post.url}}">link</a>)</li>
+    {% else %}
+    <li><em>Keine neuen Blog-Posts.</em></li>
+    {% endfor %}
+</ul>
+
+
+<h1>Veranstaltungen</h1>
+<ul>
+    {% for event in events %}
+    <li>{{event.title}} <em>gepostet von</em> {{event.username}} <em>am</em> {{event.date}} (<a href="{{event.url}}">link</a>)</li>
+    {% else %}
+    <li><em>Keine neuen Blog-Posts.</em></li>
+    {% endfor %}
+</ul>
+
+</body>
+</html>
