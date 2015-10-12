@@ -4,6 +4,8 @@ __author__ = "marko"
 import sys, os, datetime, smtplib, json
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import codecs
+from collections import OrderedDict
 
 import sqlalchemy
 from sqlalchemy import and_
@@ -28,8 +30,7 @@ def seconds_since_epoch(a_datetime):
     return long((a_datetime - epoch).total_seconds())
 
 
-datetime_format = "%Y-%m-%dT%H-%M-%S"
-
+datetime_format = "%Y-%m-%dT%H-%M-%S.%f"
 
 def read_last_insterval_end():
     if not os.path.exists(os.path.dirname(configuration.state_path)):
@@ -60,21 +61,31 @@ def read_last_insterval_end():
     return max(timestamps)
 
 
-def update_state(path, entry):
-    assert (path in [configuration.state_path, configuration.error_log_path])
+def update(path, entry):
+    """
+    Updates either the state of the application or the log.
+
+    :param path: path to the state or log. Must be either configuration.state_path or configuration.log_path.
+    :param entry: dictionary representing the update. Will be converted to JSON.
+    """
+    assert (path in [configuration.state_path, configuration.log_path])
 
     try:
-        with open(configuration.state_path, "a") as fid:
-            fid.write("\n" + json.dumps(entry))
+        with open(path, "a") as fid:
+            fid.write(json.dumps(entry) + "\n")
 
     except IOError:
-        sys.stderr.write("The state file %s could not be opened for appending." % configuration.state_path)
-        sys.exit(1)
+        raise RuntimeError("The file %s could not be opened for appending." % path)
 
 
-def digest():
+def digest(now):
+    """
+    Produces and sends the digest to the recipients.
+
+    :param now: datetime representing the time when the application started.
+    """
     interval_begin = read_last_insterval_end()
-    interval_end = datetime.datetime.now()
+    interval_end = now
 
     engine = sqlalchemy.create_engine(configuration.database_url)
 
@@ -91,7 +102,7 @@ def digest():
     # Load template
     script_dir = os.path.dirname(os.path.realpath(__file__))
     template_path = os.path.join(script_dir, "mail_template.html")
-    fid = open(template_path, "r")
+    fid = codecs.open(template_path, "r", "utf-8")
     template = jinja2.Template(fid.read())
     fid.close()
 
@@ -106,7 +117,7 @@ def digest():
                 "username": post.user.username,
                 "date": datetime.datetime.fromtimestamp(post.create_stamp).strftime("%Y-%m-%d %H:%M"),
                 "topic": post.topic.title,
-                "url": "http://oxwall.nena1.ch/forum/topic/%s" % (post.topic.id)
+                "url": "%s/forum/topic/%s" % (configuration.url_prefix, post.topic.id)
             }
 
         forum_posts.append(post_dict)
@@ -117,12 +128,11 @@ def digest():
                  Blog_post.timestamp < seconds_since_epoch(interval_end)),
                     Blog_post.privacy == "everybody",
                     Blog_post.is_draft == False).order_by(Blog_post.timestamp):
-
         blog_posts.append({
             "username": post.user.username,
             "date": datetime.datetime.fromtimestamp(post.timestamp).strftime("%Y-%m-%d %H:%M"),
             "title": post.title,
-            "url": "http://oxwall.nena1.ch/blogs/%s" % (post.id)
+            "url": "%s/blogs/%s" % (configuration.url_prefix, post.id)
         })
 
     events = []
@@ -134,10 +144,14 @@ def digest():
             "username": event.user.username,
             "date": datetime.datetime.fromtimestamp(event.create_timestamp).strftime("%Y-%m-%d %H:%M"),
             "title": event.title,
-            "url": "http://oxwall.nena1.ch/blogs/%s" % (event.id)
+            "url": "%s/events/%s" % (configuration.url_prefix, event.id)
         })
 
-    message = template.render(forum_posts=forum_posts, blog_posts=blog_posts, events = events).encode("UTF-8")
+    message = template.render(
+        forum_posts=forum_posts,
+        blog_posts=blog_posts,
+        events=events,
+        admin_email=configuration.admin_email).encode("UTF-8")
 
     # Send digests
     if len(message) > configuration.max_message_size:
@@ -173,27 +187,40 @@ def digest():
     s.quit()
 
     # Update the checkpoint.
-    update_state(configuration.state_path, {
-        "interval_begin": interval_begin.strftime(datetime_format),
-        "interval_end": interval_end.strftime(datetime_format),
-        "forum_post_count": len(forum_posts),
-        "blog_post_count": len(blog_posts),
-        "event_count": len(events),
-        "message_size": len(message),
-        "recipient_count": len(recipient_list)})
-
+    update(configuration.state_path,
+           OrderedDict([
+               ("interval_begin", interval_begin.strftime(datetime_format)),
+               ("interval_end", interval_end.strftime(datetime_format)),
+               ("forum_post_count", len(forum_posts)),
+               ("blog_post_count", len(blog_posts)),
+               ("event_count", len(events)),
+               ("message_size", len(message)),
+               ("recipient_count", len(recipient_list))
+           ]))
 
 def main():
     if len(sys.argv) != 1:
         sys.stderr.write("Usage: launch.py {no arguments}")
         sys.exit(1)
 
+    now = datetime.datetime.now()
     try:
-        digest()
-    except Exception as e:
-        raise
-        update_state(configuration.error_log_path, {"error": str(e), "date": str(datetime.datetime.now())})
+        digest(now)
 
+        update(configuration.log_path,
+               OrderedDict([
+                   ("date", now.strftime(datetime_format)),
+                   ("level", "info"),
+                   ("message", "Terminated without error.")
+               ]))
+
+    except Exception as e:
+        update(configuration.log_path,
+               OrderedDict([
+                   ("date", now.strftime(datetime_format)),
+                   ("level", "error"),
+                   ("message", str(e))
+               ]))
 
 if __name__ == "__main__":
     main()
