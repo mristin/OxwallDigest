@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 __author__ = "marko"
 
 import sys, os, datetime, smtplib, json
@@ -6,6 +7,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import codecs
 from collections import OrderedDict
+import traceback
 
 import sqlalchemy
 from sqlalchemy import and_
@@ -31,6 +33,7 @@ def seconds_since_epoch(a_datetime):
 
 
 datetime_format = "%Y-%m-%dT%H-%M-%S.%f"
+
 
 def read_last_insterval_end():
     if not os.path.exists(os.path.dirname(configuration.state_path)):
@@ -78,6 +81,32 @@ def update(path, entry):
         raise RuntimeError("The file %s could not be opened for appending." % path)
 
 
+class Topic_digest(object):
+    def __init__(self, title, users, first, last, url):
+        """
+        :param title: str
+        :param users: list[str]
+        :param first: long
+        :param last: long
+        :param url: string
+        """
+        self.users = users
+        self.first = first
+        self.last = last
+        self.url = url
+
+    def append(self, user, timestamp):
+        """
+        :param user: str
+        :param timestamp: long
+        """
+        if user not in self.users:
+            self.users.append(user)
+
+        self.first = min(self.first, timestamp)
+        self.last = max(self.last, timestamp)
+
+
 def digest(now):
     """
     Produces and sends the digest to the recipients.
@@ -107,20 +136,26 @@ def digest(now):
     fid.close()
 
     # Digest the forum content
-    forum_posts = []
+    topic_digests = OrderedDict()
+    forum_post_count = 0
     for post in session.query(Forum_post).filter(
             and_(Forum_post.create_stamp >= seconds_since_epoch(interval_begin),
                  Forum_post.create_stamp < seconds_since_epoch(interval_end))).order_by(Forum_post.create_stamp):
 
         if not post.topic.group.is_private and not post.topic.group.section.is_hidden:
-            post_dict = {
-                "username": post.user.username,
-                "date": datetime.datetime.fromtimestamp(post.create_stamp).strftime("%Y-%m-%d %H:%M"),
-                "topic": post.topic.title,
-                "url": "%s/forum/topic/%s" % (configuration.url_prefix, post.topic.id)
-            }
+            forum_post_count += 1
 
-        forum_posts.append(post_dict)
+            topic_title = post.topic.title
+            if topic_title not in topic_digests:
+                topic_digests[topic_title] = Topic_digest(
+                    title=topic_title,
+                    users=[post.user.username],
+                    first=post.create_stamp,
+                    last=post.create_stamp,
+                    url="%s/forum/topic/%s" % (configuration.url_prefix, post.topic.id))
+            else:
+                topic_digest = topic_digests[topic_title]
+                topic_digest.append(post.user.username, post.create_stamp)
 
     blog_posts = []
     for post in session.query(Blog_post).filter(
@@ -144,11 +179,12 @@ def digest(now):
             "username": event.user.username,
             "date": datetime.datetime.fromtimestamp(event.create_timestamp).strftime("%Y-%m-%d %H:%M"),
             "title": event.title,
-            "url": "%s/events/%s" % (configuration.url_prefix, event.id)
+            "url": "%s/event/%s" % (configuration.url_prefix, event.id)
         })
 
+    print(repr(topic_digests))
     message = template.render(
-        forum_posts=forum_posts,
+        topic_digests=topic_digests,
         blog_posts=blog_posts,
         events=events,
         admin_email=configuration.admin_email).encode("UTF-8")
@@ -178,9 +214,9 @@ def digest(now):
         msg["To"] = recipient
         msg.attach(MIMEText(
             "Dein Email-Klient kann leider keine HTML-Nachrichten anzeigen. " + \
-            "Bitte wende Dich an: %s" % (
-                configuration.admin_email), "plain"))
-        msg.attach(MIMEText("".join(message), "html"))
+            "Für die Lösung des Problems wende Dich an: %s" % (
+                configuration.admin_email), "plain", "utf-8"))
+        msg.attach(MIMEText("".join(message), "html", "utf-8"))
 
         s.sendmail(configuration.sender, recipient, msg.as_string())
 
@@ -191,12 +227,13 @@ def digest(now):
            OrderedDict([
                ("interval_begin", interval_begin.strftime(datetime_format)),
                ("interval_end", interval_end.strftime(datetime_format)),
-               ("forum_post_count", len(forum_posts)),
+               ("forum_post_count", forum_post_count),
                ("blog_post_count", len(blog_posts)),
                ("event_count", len(events)),
                ("message_size", len(message)),
                ("recipient_count", len(recipient_list))
            ]))
+
 
 def main():
     if len(sys.argv) != 1:
@@ -214,13 +251,16 @@ def main():
                    ("message", "Terminated without error.")
                ]))
 
+
     except Exception as e:
         update(configuration.log_path,
                OrderedDict([
                    ("date", now.strftime(datetime_format)),
                    ("level", "error"),
-                   ("message", str(e))
+                   ("message", str(e)),
+                   ("stacktrace", traceback.format_exc().split("\n"))
                ]))
+
 
 if __name__ == "__main__":
     main()

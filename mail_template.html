@@ -13,10 +13,34 @@
 
 <h2>Forum posts</h2>
 <ul>
-    {% for post in forum_posts %}
-    <li>{{post.date}}: {{post.username}} <em>zum Thema</em> '{{post.topic}}' (<a
-            href="{{post.url}}">link</a>)
+    {% for topic, topic_digest in topic_digests.iteritems() %}
+    <li>
+        {% if topic_digest.users|length == 1 %}
+            {{topic_digest.users[0]}} schrieb
+        {% elif topic_digest.users|length <= 5 %}
+            {% for user in topic_digest.users %}
+                {% if loop.first %}
+                    {{user}}
+                {% elif not loop.last %}
+                    {{user}},
+                {% elif loop.last %}
+                    und {{user}}
+                {% endif %}
+            {% endfor %}
+
+            schrieben
+
+        {% elif topic_digest.users|length > 5 %}
+            {% for user in topic_digest.users[:5] %}
+                {% if not loop.last %} {{user}}, {% else %} {{user}} {% endif %}
+            {% endfor %}
+
+            und {{topic_digest.users|length - 5}} weitere BenutzerInnen schrieben
+        {% endif %}
+
+        zum Thema "{{topic}}" (<a href="{{topic_digest.url}}">link</a>).
     </li>
+
     {% else %}
     <li><em>Keine neuen Forum-Posts.</em></li>
     {% endfor %}
@@ -25,7 +49,7 @@
 <h2>Blog posts</h2>
 <ul>
     {% for post in blog_posts %}
-    <li>{{post.date}}: {{post.title}} <em>von</em> {{post.username}} (<a href="{{post.url}}">link</a>)</li>
+    <li>{{post.title}} <em>von</em> {{post.username}} (<a href="{{post.url}}">link</a>)</li>
     {% else %}
     <li><em>Keine neuen Blog-Posts.</em></li>
     {% endfor %}
@@ -35,14 +59,15 @@
 <h2>Veranstaltungen</h2>
 <ul>
     {% for event in events %}
-    <li>{{event.title}} <em>gepostet von</em> {{event.username}} <em>am</em> {{event.date}} (<a href="{{event.url}}">link</a>)
+    <li>{{event.title}} <em>gepostet von</em> {{event.username}} (<a href="{{event.url}}">link</a>)
     </li>
     {% else %}
     <li><em>Keine neuen Veranstaltungen.</em></li>
     {% endfor %}
 </ul>
 
-<small>Falls Du keine Zusammenfassung-Emails mehr kriegen willst, wende Dich bitte an <a href="mailto:{{admin_email}}">{{admin_email}}</a></small>
+<small>Falls Du keine Zusammenfassung-Emails mehr kriegen willst, wende Dich bitte an <a href="mailto:{{admin_email}}">{{admin_email}}</a>
+</small>
 
 </body>
 </html>

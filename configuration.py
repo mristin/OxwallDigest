@@ -12,10 +12,11 @@ smtp_server = "localhost"
 sender = "zusammenfassung@nena1.ch"
 
 # Path to the state file that will be updated with a checkpoint everytime the application has run.
-# Each line is a valid JSON-encoded object.
+# The path can be either absolute or relative.
+# Each line in the state file is a valid JSON-encoded object.
 state_path = "/home/marko/digest.state.json"
 
-# Path to the log.
+# Path to the log. You can specify either a relative or an absolute path.
 # Each line is a valid JSON-encoded object.
 log_path = "/home/marko/digest.log.json"
 
