@@ -182,7 +182,6 @@ def digest(now):
             "url": "%s/event/%s" % (configuration.url_prefix, event.id)
         })
 
-    print(repr(topic_digests))
     message = template.render(
         topic_digests=topic_digests,
         blog_posts=blog_posts,
