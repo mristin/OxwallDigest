@@ -106,7 +106,6 @@ class Topic_digest(object):
         self.first = min(self.first, timestamp)
         self.last = max(self.last, timestamp)
 
-
 def digest(now):
     """
     Produces and sends the digest to the recipients.
@@ -202,7 +201,15 @@ def digest(now):
     excluded_recipient_set = set(configuration.excluded_recipients)
     recipient_list = [recipient for recipient in recipient_list if recipient not in excluded_recipient_set]
 
-    s = smtplib.SMTP(configuration.smtp_server)
+    s = None
+    if not configuration.smtp.with_ssl:
+        s = smtplib.SMTP(host = configuration.smtp.host, port = configuration.smtp.port)
+    else:
+        s = smtplib.SMTP_SSL(host = configuration.smtp.host, port = configuration.smtp.port)
+
+    if configuration.smtp.user is not None:
+        s.login(user = configuration.smtp.user, password = configuration.smtp.password)
+
     for recipient in recipient_list:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = "Nena1 Oxwall Zusammenfassung von %s bis %s" % (

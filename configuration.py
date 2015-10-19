@@ -5,8 +5,23 @@ import datetime
 # Database connection "mysql://{user name}:{password}@{host name}:{port}/{database name}?charset=utf8
 database_url = "mysql://marko:espasswort@localhost:3306/oxwall?charset=utf8"
 
-# SMTP server to be used for sending emails. Can include a port.
-smtp_server = "localhost"
+# Define how to connect to SMTP server for sending emails.
+class Smtp(object):
+    def __init__(self, host, with_ssl = False, port = 0, user = None, password = None):
+        """
+        :param host: string
+        :param with_ssl: bool
+        :param port: int
+        :param user: string
+        :param password: string
+        """
+        self.host = host
+        self.with_ssl = with_ssl
+        self.port = port
+        self.user = user
+        self.password = password
+
+smtp = Smtp(host = "localhost")
 
 # The email address of the digest sender. Best you chose a real address, as users might respond to it.
 sender = "zusammenfassung@nena1.ch"
@@ -22,7 +37,7 @@ log_path = "/home/marko/digest.log.json"
 
 # Email address of the administrator. Shows whenever a mail client can not display HTML and
 # at the end of the digest mail to direct the user for opting out.
-admin_email = "marko.ristin@gmail.com"
+admin_email = "admin@nena1.ch"
 
 # The digest email will not be sent if the message exceeds this number of bytes.
 max_message_size = 1024 * 1024
