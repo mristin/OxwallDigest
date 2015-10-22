@@ -27,6 +27,7 @@ sudo apt-get install python-jinja2
 ```
 
 Adapt the configuration.py to fit your system settings.
+Mind that some of the fields expect Python objects.
 
 Add the script to the cron:
 ```bash
