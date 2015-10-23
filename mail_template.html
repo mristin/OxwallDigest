@@ -9,9 +9,9 @@
     </style>
 </head>
 
-<h1>Jüngste Aktivitäten in unserem Nena1-Intranet</h1>
+<h1>Jüngste Aktivitäten auf unseren internen Nena1-Seiten</h1>
 
-<h2>Forum posts</h2>
+<h2>Forum Posts</h2>
 <ul>
     {% for topic, topic_digest in topic_digests.iteritems() %}
     <li>
@@ -46,7 +46,7 @@
     {% endfor %}
 </ul>
 
-<h2>Blog posts</h2>
+<h2>Blog Posts</h2>
 <ul>
     {% for post in blog_posts %}
     <li>{{post.title}} <em>von</em> {{post.username}} (<a href="{{post.url}}">link</a>)</li>
@@ -66,6 +66,10 @@
     {% endfor %}
 </ul>
 
+
+<br/>
+<small>Das ist ein automatisch generiertes Mail. Bitte nicht darauf antworten.</small>
+<p/>
 <small>Falls Du keine Zusammenfassung-Emails mehr kriegen willst, wende Dich bitte an <a href="mailto:{{admin_email}}">{{admin_email}}</a>
 </small>
 
