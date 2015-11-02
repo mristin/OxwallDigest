@@ -78,3 +78,20 @@ class Event(Base):
     who_can_view = Column("whoCanView", TINYINT(4), nullable=False)
 
     user = relationship(User)
+
+class Comment_entity(Base):
+    __tablename__ = "ow_base_comment_entity"
+    id = Column("id", Integer, primary_key=True)
+    entity_type = Column('entityType', String(255), nullable=True)
+    entity_id =  Column("entityId", Integer)
+    active = Column("active", TINYINT(4))
+
+class Comment(Base):
+    __tablename__ = "ow_base_comment"
+    id = Column('id', Integer, primary_key=True)
+    user_id = Column('userId', Integer, ForeignKey('ow_base_user.id'), nullable=False)
+    comment_entity_id = Column('commentEntityId', Integer, ForeignKey('ow_base_comment_entity.id'), nullable=False)
+    create_stamp = Column('createStamp', Integer, nullable=False)
+
+    user = relationship(User)
+    comment_entity = relationship(Comment_entity)
