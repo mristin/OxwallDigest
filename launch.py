@@ -142,7 +142,9 @@ def digest(now):
             and_(Forum_post.create_stamp >= seconds_since_epoch(interval_begin),
                  Forum_post.create_stamp < seconds_since_epoch(interval_end))).order_by(Forum_post.create_stamp):
 
-        if not post.topic.group.is_private and not post.topic.group.section.is_hidden:
+        # Compare against True instead of False or using "not", since is_private and is_hidden
+        # can be None.
+        if post.topic.group.is_private != True and post.topic.group.section.is_hidden != True:
             forum_post_count += 1
 
             topic_title = post.topic.title
