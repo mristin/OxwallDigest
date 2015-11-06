@@ -13,12 +13,12 @@
 
 <h2>Forum Posts</h2>
 <ul>
-    {% for topic, topic_digest in topic_digests.iteritems() %}
+    {% for topic, digest in topic_digests.iteritems() %}
     <li>
-        {% if topic_digest.users|length == 1 %}
-            {{topic_digest.users[0]}} schrieb
-        {% elif topic_digest.users|length <= 5 %}
-            {% for user in topic_digest.users %}
+        {% if digest.users|length == 1 %}
+            {{digest.users[0]}} schrieb
+        {% elif digest.users|length <= 5 %}
+            {% for user in digest.users %}
                 {% if loop.first %}
                     {{user}}
                 {% elif not loop.last %}
@@ -30,15 +30,15 @@
 
             schrieben
 
-        {% elif topic_digest.users|length > 5 %}
-            {% for user in topic_digest.users[:5] %}
+        {% elif digest.users|length > 5 %}
+            {% for user in digest.users[:5] %}
                 {% if not loop.last %} {{user}}, {% else %} {{user}} {% endif %}
             {% endfor %}
 
-            und {{topic_digest.users|length - 5}} weitere BenutzerInnen schrieben
+            und {{digest.users|length - 5}} weitere BenutzerInnen schrieben
         {% endif %}
 
-        zum Thema "{{topic}}" (<a href="{{topic_digest.url}}">link</a>).
+        zum Thema "{{topic}}" (<a href="{{digest.url}}">link</a>).
     </li>
 
     {% else %}
@@ -66,6 +66,73 @@
     {% endfor %}
 </ul>
 
+<h2>Kommentare zu Blog Posts</h2>
+<ul>
+    {% for title, digest in blog_post_comments.iteritems() %}
+    <li>
+        {% if digest.users|length == 1 %}
+            {{digest.users[0]}} kommentierte
+        {% elif digest.users|length <= 5 %}
+            {% for user in digest.users %}
+                {% if loop.first %}
+                    {{user}}
+                {% elif not loop.last %}
+                    {{user}},
+                {% elif loop.last %}
+                    und {{user}}
+                {% endif %}
+            {% endfor %}
+
+            kommentierten
+
+        {% elif digest.users|length > 5 %}
+            {% for user in digest.users[:5] %}
+                {% if not loop.last %} {{user}}, {% else %} {{user}} {% endif %}
+            {% endfor %}
+
+            und {{digest.users|length - 5}} weitere BenutzerInnen kommentierten
+        {% endif %}
+
+        zum Blog Post "{{title}}" (<a href="{{digest.url}}">link</a>).
+    </li>
+    {% else %}
+    <li><em>Keine neuen Kommentare zu Blog Posts.</em></li>
+    {% endfor %}
+</ul>
+
+<h2>Kommentare zu Veranstaltungen</h2>
+<ul>
+    {% for title, digest in event_comments.iteritems() %}
+    <li>
+        {% if digest.users|length == 1 %}
+            {{digest.users[0]}} kommentierte
+        {% elif digest.users|length <= 5 %}
+            {% for user in digest.users %}
+                {% if loop.first %}
+                    {{user}}
+                {% elif not loop.last %}
+                    {{user}},
+                {% elif loop.last %}
+                    und {{user}}
+                {% endif %}
+            {% endfor %}
+
+            kommentierten
+
+        {% elif digest.users|length > 5 %}
+            {% for user in digest.users[:5] %}
+                {% if not loop.last %} {{user}}, {% else %} {{user}} {% endif %}
+            {% endfor %}
+
+            und {{digest.users|length - 5}} weitere BenutzerInnen kommentierten
+        {% endif %}
+
+        zur Veranstaltung "{{title}}" (<a href="{{digest.url}}">link</a>).
+    </li>
+    {% else %}
+    <li><em>Keine neuen Kommentare zu Veranstaltungen.</em></li>
+    {% endfor %}
+</ul>
 
 <br/>
 <small>Das ist ein automatisch generiertes Mail. Bitte nicht darauf antworten.</small>

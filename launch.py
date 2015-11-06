@@ -15,7 +15,7 @@ from sqlalchemy import and_
 import jinja2
 
 import model
-from model import Forum_post, Forum_section, Forum_group, Forum_topic, User, Blog_post, Event
+from model import Forum_post, Forum_section, Forum_group, Forum_topic, User, Blog_post, Event, Comment, Comment_entity
 import configuration
 
 
@@ -81,7 +81,7 @@ def update(path, entry):
         raise RuntimeError("The file %s could not be opened for appending." % path)
 
 
-class Topic_digest(object):
+class Entity_digest(object):
     def __init__(self, title, users, first, last, url):
         """
         :param title: str
@@ -105,6 +105,7 @@ class Topic_digest(object):
 
         self.first = min(self.first, timestamp)
         self.last = max(self.last, timestamp)
+
 
 def digest(now):
     """
@@ -134,7 +135,7 @@ def digest(now):
     template = jinja2.Template(fid.read())
     fid.close()
 
-    # Digest the forum content
+    # Digest forum posts
     topic_digests = OrderedDict()
     forum_post_count = 0
     for post in session.query(Forum_post).filter(
@@ -148,7 +149,7 @@ def digest(now):
 
             topic_title = post.topic.title
             if topic_title not in topic_digests:
-                topic_digests[topic_title] = Topic_digest(
+                topic_digests[topic_title] = Entity_digest(
                     title=topic_title,
                     users=[post.user.username],
                     first=post.create_stamp,
@@ -158,6 +159,7 @@ def digest(now):
                 topic_digest = topic_digests[topic_title]
                 topic_digest.append(post.user.username, post.create_stamp)
 
+    # Digest blog posts
     blog_posts = []
     for post in session.query(Blog_post).filter(
             and_(Blog_post.timestamp >= seconds_since_epoch(interval_begin),
@@ -171,6 +173,7 @@ def digest(now):
             "url": "%s/blogs/%s" % (configuration.url_prefix, post.id)
         })
 
+    # Digest events
     events = []
     for event in session.query(Event).filter(
             and_(Event.create_timestamp >= seconds_since_epoch(interval_begin),
@@ -183,10 +186,58 @@ def digest(now):
             "url": "%s/event/%s" % (configuration.url_prefix, event.id)
         })
 
+    # Digest comments to blog posts
+    blog_post_comments = OrderedDict()
+    for comment in session.query(Comment).filter(
+            and_(Comment.create_stamp >= seconds_since_epoch(interval_begin),
+                 Comment.create_stamp < seconds_since_epoch(interval_end))).order_by(Comment.create_stamp):
+
+        if comment.comment_entity.active != 1 or comment.comment_entity.entity_type != "blog-post":
+            continue
+
+        blog_post = session.query(Blog_post).filter(Blog_post.id == comment.comment_entity.entity_id).one()
+        title = blog_post.title
+
+        if title not in blog_post_comments:
+            blog_post_comments[title] = Entity_digest(
+                title = title,
+                users=[comment.user.username],
+                first=comment.create_stamp,
+                last=comment.create_stamp,
+                url="%s/blogs/%s" % (configuration.url_prefix, blog_post.id)
+            )
+        else:
+            blog_post_comments[title].append(comment.user.username, comment.create_stamp)
+
+    # Digest comments to events
+    event_comments = OrderedDict()
+    for comment in session.query(Comment).filter(
+            and_(Comment.create_stamp >= seconds_since_epoch(interval_begin),
+                 Comment.create_stamp < seconds_since_epoch(interval_end))).order_by(Comment.create_stamp):
+
+        if comment.comment_entity.active != 1 or comment.comment_entity.entity_type != "event":
+            continue
+
+        event = session.query(Event).filter(Event.id == comment.comment_entity.entity_id).one()
+        title = event.title
+
+        if title not in event_comments:
+            event_comments[title] = Entity_digest(
+                title = title,
+                users=[comment.user.username],
+                first=comment.create_stamp,
+                last=comment.create_stamp,
+                url="%s/event/%s" % (configuration.url_prefix, event.id)
+            )
+        else:
+            event_comments[title].append(comment.user.username, comment.create_stamp)
+
     message = template.render(
         topic_digests=topic_digests,
         blog_posts=blog_posts,
         events=events,
+        blog_post_comments=blog_post_comments,
+        event_comments=event_comments,
         admin_email=configuration.admin_email).encode("UTF-8")
 
     # Send digests
@@ -205,12 +256,12 @@ def digest(now):
 
     s = None
     if not configuration.smtp.with_ssl:
-        s = smtplib.SMTP(host = configuration.smtp.host, port = configuration.smtp.port)
+        s = smtplib.SMTP(host=configuration.smtp.host, port=configuration.smtp.port)
     else:
-        s = smtplib.SMTP_SSL(host = configuration.smtp.host, port = configuration.smtp.port)
+        s = smtplib.SMTP_SSL(host=configuration.smtp.host, port=configuration.smtp.port)
 
     if configuration.smtp.user is not None:
-        s.login(user = configuration.smtp.user, password = configuration.smtp.password)
+        s.login(user=configuration.smtp.user, password=configuration.smtp.password)
 
     for recipient in recipient_list:
         msg = MIMEMultipart("alternative")
