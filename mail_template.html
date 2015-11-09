@@ -55,17 +55,6 @@
     {% endfor %}
 </ul>
 
-
-<h2>Veranstaltungen</h2>
-<ul>
-    {% for event in events %}
-    <li>{{event.title}} <em>gepostet von</em> {{event.username}} (<a href="{{event.url}}">link</a>)
-    </li>
-    {% else %}
-    <li><em>Keine neuen Veranstaltungen.</em></li>
-    {% endfor %}
-</ul>
-
 <h2>Kommentare zu Blog Posts</h2>
 <ul>
     {% for title, digest in blog_post_comments.iteritems() %}
@@ -99,6 +88,17 @@
     <li><em>Keine neuen Kommentare zu Blog Posts.</em></li>
     {% endfor %}
 </ul>
+
+<h2>Veranstaltungen</h2>
+<ul>
+    {% for event in events %}
+    <li>{{event.title}} <em>gepostet von</em> {{event.username}} (<a href="{{event.url}}">link</a>)
+    </li>
+    {% else %}
+    <li><em>Keine neuen Veranstaltungen.</em></li>
+    {% endfor %}
+</ul>
+
 
 <h2>Kommentare zu Veranstaltungen</h2>
 <ul>
