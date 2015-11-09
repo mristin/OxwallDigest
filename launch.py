@@ -299,7 +299,7 @@ def main():
         sys.stderr.write("Usage: launch.py {no arguments}")
         sys.exit(1)
 
-    now = datetime.datetime.now()
+    now = datetime.datetime.utcnow()
     try:
         digest(now)
 
