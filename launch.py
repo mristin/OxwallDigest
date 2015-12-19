@@ -144,7 +144,7 @@ def digest(now):
 
         # Compare against True instead of False or using "not", since is_private and is_hidden
         # can be None.
-        if post.topic.group.is_private != True and post.topic.group.section.is_hidden != True:
+        if post.topic.group is None or (post.topic.group.is_private != True and post.topic.group.section.is_hidden != True):
             forum_post_count += 1
 
             topic_title = post.topic.title
