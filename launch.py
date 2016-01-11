@@ -144,17 +144,18 @@ def digest(now):
 
         # Compare against True instead of False or using "not", since is_private and is_hidden
         # can be None.
-        if post.topic.group is None or (post.topic.group.is_private != True and post.topic.group.section.is_hidden != True):
+        if post.topic.group is None or (
+                post.topic.group.is_private != True and post.topic.group.section.is_hidden != True):
             forum_post_count += 1
 
             topic_title = post.topic.title
             if topic_title not in topic_digests:
                 topic_digests[topic_title] = Entity_digest(
-                    title=topic_title,
-                    users=[post.user.username],
-                    first=post.create_stamp,
-                    last=post.create_stamp,
-                    url="%s/forum/topic/%s" % (configuration.url_prefix, post.topic.id))
+                        title=topic_title,
+                        users=[post.user.username],
+                        first=post.create_stamp,
+                        last=post.create_stamp,
+                        url="%s/forum/topic/%s" % (configuration.url_prefix, post.topic.id))
             else:
                 topic_digest = topic_digests[topic_title]
                 topic_digest.append(post.user.username, post.create_stamp)
@@ -200,11 +201,11 @@ def digest(now):
 
         if title not in blog_post_comments:
             blog_post_comments[title] = Entity_digest(
-                title = title,
-                users=[comment.user.username],
-                first=comment.create_stamp,
-                last=comment.create_stamp,
-                url="%s/blogs/%s" % (configuration.url_prefix, blog_post.id)
+                    title=title,
+                    users=[comment.user.username],
+                    first=comment.create_stamp,
+                    last=comment.create_stamp,
+                    url="%s/blogs/%s" % (configuration.url_prefix, blog_post.id)
             )
         else:
             blog_post_comments[title].append(comment.user.username, comment.create_stamp)
@@ -218,27 +219,35 @@ def digest(now):
         if comment.comment_entity.active != 1 or comment.comment_entity.entity_type != "event":
             continue
 
-        event = session.query(Event).filter(Event.id == comment.comment_entity.entity_id).one()
+        events = session.query(Event).filter(Event.id == comment.comment_entity.entity_id).all()
+        if len(events) == 0:
+            # event was probably deleted, or the database is in inconsistent state.
+            # skip it.
+            continue
+
+        # ignore the multiplicity of the events.
+        event = events[0]
+
         title = event.title
 
         if title not in event_comments:
             event_comments[title] = Entity_digest(
-                title = title,
-                users=[comment.user.username],
-                first=comment.create_stamp,
-                last=comment.create_stamp,
-                url="%s/event/%s" % (configuration.url_prefix, event.id)
+                    title=title,
+                    users=[comment.user.username],
+                    first=comment.create_stamp,
+                    last=comment.create_stamp,
+                    url="%s/event/%s" % (configuration.url_prefix, event.id)
             )
         else:
             event_comments[title].append(comment.user.username, comment.create_stamp)
 
     message = template.render(
-        topic_digests=topic_digests,
-        blog_posts=blog_posts,
-        events=events,
-        blog_post_comments=blog_post_comments,
-        event_comments=event_comments,
-        admin_email=configuration.admin_email).encode("UTF-8")
+            topic_digests=topic_digests,
+            blog_posts=blog_posts,
+            events=events,
+            blog_post_comments=blog_post_comments,
+            event_comments=event_comments,
+            admin_email=configuration.admin_email).encode("UTF-8")
 
     # Send digests
     if len(message) > configuration.max_message_size:
@@ -319,6 +328,9 @@ def main():
                    ("message", str(e)),
                    ("stacktrace", traceback.format_exc().split("\n"))
                ]))
+
+    with open("/home/marko/tmp/log.json", "r") as f:
+        print f.read()
 
 
 if __name__ == "__main__":
