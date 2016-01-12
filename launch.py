@@ -329,8 +329,8 @@ def main():
                    ("stacktrace", traceback.format_exc().split("\n"))
                ]))
 
-    with open("/home/marko/tmp/log.json", "r") as f:
-        print f.read()
+    # with open("/home/marko/tmp/log.json", "r") as f:
+    #    print f.read()
 
 
 if __name__ == "__main__":
