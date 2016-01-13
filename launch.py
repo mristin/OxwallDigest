@@ -273,21 +273,29 @@ def digest(now):
         s.login(user=configuration.smtp.user, password=configuration.smtp.password)
 
     for recipient in recipient_list:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = "Nena1 Oxwall Zusammenfassung von %s bis %s" % (
-            interval_begin.strftime("%Y-%m-%d %H:%M"),
-            interval_end.strftime("%Y-%m-%d %H:%M")
-        )
-        msg["From"] = configuration.sender
-        msg["To"] = recipient
-        msg.attach(MIMEText(
-            "Dein Email-Klient kann leider keine HTML-Nachrichten anzeigen. " + \
-            "Für die Lösung des Problems wende Dich an: %s" % (
-                configuration.admin_email), "plain", "utf-8"))
-        msg.attach(MIMEText("".join(message), "html", "utf-8"))
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = "Nena1 Oxwall Zusammenfassung von %s bis %s" % (
+                interval_begin.strftime("%Y-%m-%d %H:%M"),
+                interval_end.strftime("%Y-%m-%d %H:%M")
+            )
+            msg["From"] = configuration.sender
+            msg["To"] = recipient
+            msg.attach(MIMEText(
+                "Dein Email-Klient kann leider keine HTML-Nachrichten anzeigen. " + \
+                "Für die Lösung des Problems wende Dich an: %s" % (
+                    configuration.admin_email), "plain", "utf-8"))
+            msg.attach(MIMEText("".join(message), "html", "utf-8"))
 
-        s.sendmail(configuration.sender, recipient, msg.as_string())
-
+            s.sendmail(configuration.sender, recipient, msg.as_string())
+        except Exception as e:
+            update(configuration.log_path,
+               OrderedDict([
+                   ("date", now.strftime(datetime_format)),
+                   ("level", "error"),
+                   ("message", str(e) + "; did not block"),
+                   ("stacktrace", traceback.format_exc().split("\n"))
+               ]))
     s.quit()
 
     # Update the checkpoint.
