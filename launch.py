@@ -13,6 +13,7 @@ import sqlalchemy
 from sqlalchemy import and_
 
 import jinja2
+import html2text
 
 import model
 from model import Forum_post, Forum_section, Forum_group, Forum_topic, User, Blog_post, Event, Comment, Comment_entity
@@ -282,10 +283,11 @@ def digest(now):
             msg["From"] = configuration.sender
             msg["To"] = recipient
             msg.attach(MIMEText(
-                "Dein Email-Klient kann leider keine HTML-Nachrichten anzeigen. " + \
-                "Für die Lösung des Problems wende Dich an: %s" % (
-                    configuration.admin_email), "plain", "utf-8"))
-            msg.attach(MIMEText("".join(message), "html", "utf-8"))
+                ("(Dein Email-Klient kann leider keine HTML-Nachrichten anzeigen. " +
+                "Wir haben deswegen den Digest für Dich in ein leserliches Text-Format umgewandelt.)\n\n").decode('utf8') +
+                html2text.html2text(message.decode('utf8')),
+                "plain", "utf-8"))
+            msg.attach(MIMEText(message, "html", "utf-8"))
 
             s.sendmail(configuration.sender, recipient, msg.as_string())
         except Exception as e:
