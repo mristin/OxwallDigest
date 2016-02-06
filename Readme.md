@@ -24,6 +24,7 @@ Install the following python dependencies:
 sudo apt-get install python-mysqldb
 sudo apt-get install python-sqlalchemy
 sudo apt-get install python-jinja2
+sudo apt-get install python-html2text
 ```
 
 Adapt the configuration.py to fit your system settings.
