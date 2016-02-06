@@ -332,13 +332,10 @@ def main():
         update(configuration.log_path,
                OrderedDict([
                    ("date", now.strftime(datetime_format)),
-                   ("level", "error"),
-                   ("message", str(e)),
+                   ("level", "fatal"),
+                   ("message", "Terminated with fatal error: " + str(e)),
                    ("stacktrace", traceback.format_exc().split("\n"))
                ]))
-
-    # with open("/home/marko/tmp/log.json", "r") as f:
-    #    print f.read()
 
 
 if __name__ == "__main__":
